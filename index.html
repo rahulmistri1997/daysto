@@ -28,6 +28,7 @@
                         'tick': 'tick 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                         'in': 'fadeIn 0.2s ease-out',
                         'glow-pulse': 'glowPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shake': 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both',
                     },
                     keyframes: {
                         tick: {
@@ -41,6 +42,12 @@
                         glowPulse: {
                             '0%, 100%': { opacity: '1' },
                             '50%': { opacity: '0.6', transform: 'scale(1.01)' },
+                        },
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
                         }
                     }
                 }
@@ -59,13 +66,11 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Hide scrollbar for cleaner mobile feel */
         ::-webkit-scrollbar {
             width: 0px;
             background: transparent;
         }
 
-        /* Modal backdrop blur transition */
         dialog::backdrop {
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(8px);
@@ -74,33 +79,104 @@
 </head>
 <body class="bg-zinc-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-zinc-950 to-zinc-950 text-zinc-50 min-h-screen select-none antialiased selection:bg-zinc-800">
     
-    <!-- Sticky Header Wrapper -->
-    <div class="sticky top-0 z-50 px-4 sm:px-6 pt-4 sm:pt-8 pb-4 bg-zinc-950/80 backdrop-blur-xl border-b border-white/5 mb-6 sm:mb-8 transition-all">
-        <header class="max-w-2xl mx-auto flex items-end justify-between">
-            <div>
-                <h1 class="text-3xl sm:text-4xl font-black tracking-tighter text-white drop-shadow-sm">Countdowns.</h1>
-                <p class="text-sm font-medium tracking-wide text-zinc-400 mt-1">Track your upcoming events</p>
-            </div>
+    <!-- PASSCODE LOCK SCREEN OVERLAY -->
+    <div id="lock-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-zinc-950 hidden opacity-0 transition-opacity duration-300">
+        <div class="w-16 h-16 mb-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        </div>
+        <h2 id="lock-title" class="text-2xl font-bold text-white mb-2 tracking-tight">Enter Passcode</h2>
+        <p id="lock-subtitle" class="text-sm font-medium text-zinc-400 mb-10">Unlock your private countdowns</p>
+        
+        <!-- PIN Indicator Dots -->
+        <div id="pin-dots-container" class="flex gap-5 mb-14 h-4 items-center justify-center">
+            <div class="w-3.5 h-3.5 rounded-full border border-zinc-700 bg-transparent transition-all duration-200" id="pin-dot-1"></div>
+            <div class="w-3.5 h-3.5 rounded-full border border-zinc-700 bg-transparent transition-all duration-200" id="pin-dot-2"></div>
+            <div class="w-3.5 h-3.5 rounded-full border border-zinc-700 bg-transparent transition-all duration-200" id="pin-dot-3"></div>
+            <div class="w-3.5 h-3.5 rounded-full border border-zinc-700 bg-transparent transition-all duration-200" id="pin-dot-4"></div>
+        </div>
+
+        <!-- Custom Numpad UI -->
+        <div class="grid grid-cols-3 gap-x-8 gap-y-5">
+            <button onclick="addPin('1')" class="w-16 h-16 rounded-full text-2xl font-medium text-white bg-zinc-900/50 hover:bg-zinc-800 transition-colors active:scale-95 border border-white/5 shadow-sm">1</button>
+            <button onclick="addPin('2')" class="w-16 h-16 rounded-full text-2xl font-medium text-white bg-zinc-900/50 hover:bg-zinc-800 transition-colors active:scale-95 border border-white/5 shadow-sm">2</button>
+            <button onclick="addPin('3')" class="w-16 h-16 rounded-full text-2xl font-medium text-white bg-zinc-900/50 hover:bg-zinc-800 transition-colors active:scale-95 border border-white/5 shadow-sm">3</button>
+            <button onclick="addPin('4')" class="w-16 h-16 rounded-full text-2xl font-medium text-white bg-zinc-900/50 hover:bg-zinc-800 transition-colors active:scale-95 border border-white/5 shadow-sm">4</button>
+            <button onclick="addPin('5')" class="w-16 h-16 rounded-full text-2xl font-medium text-white bg-zinc-900/50 hover:bg-zinc-800 transition-colors active:scale-95 border border-white/5 shadow-sm">5</button>
+            <button onclick="addPin('6')" class="w-16 h-16 rounded-full text-2xl font-medium text-white bg-zinc-900/50 hover:bg-zinc-800 transition-colors active:scale-95 border border-white/5 shadow-sm">6</button>
+            <button onclick="addPin('7')" class="w-16 h-16 rounded-full text-2xl font-medium text-white bg-zinc-900/50 hover:bg-zinc-800 transition-colors active:scale-95 border border-white/5 shadow-sm">7</button>
+            <button onclick="addPin('8')" class="w-16 h-16 rounded-full text-2xl font-medium text-white bg-zinc-900/50 hover:bg-zinc-800 transition-colors active:scale-95 border border-white/5 shadow-sm">8</button>
+            <button onclick="addPin('9')" class="w-16 h-16 rounded-full text-2xl font-medium text-white bg-zinc-900/50 hover:bg-zinc-800 transition-colors active:scale-95 border border-white/5 shadow-sm">9</button>
             
-            <div class="flex items-center gap-3">
-                <div id="pwa-status" class="hidden items-center justify-center rounded-full bg-zinc-800/80 ring-1 ring-white/10 backdrop-blur-sm px-4 py-1.5 text-xs font-bold tracking-wide text-zinc-300 shadow-sm">
-                    Ready
+            <button onclick="cancelPinAction()" id="pin-cancel-btn" class="w-16 h-16 rounded-full text-sm font-bold text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors active:scale-95 flex items-center justify-center">Cancel</button>
+            <button onclick="addPin('0')" class="w-16 h-16 rounded-full text-2xl font-medium text-white bg-zinc-900/50 hover:bg-zinc-800 transition-colors active:scale-95 border border-white/5 shadow-sm">0</button>
+            <button onclick="deletePin()" class="w-16 h-16 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors active:scale-95">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
+            </button>
+        </div>
+
+        <button id="pin-forgot-btn" onclick="resetApp()" class="mt-12 text-xs font-semibold tracking-wider uppercase text-zinc-600 hover:text-red-400 transition-colors">Forgot Passcode? Reset App</button>
+    </div>
+
+    <!-- MAIN APP CONTENT (Hidden while locked) -->
+    <div id="app-content" class="transition-opacity duration-500 opacity-0 hidden min-h-screen">
+        <!-- Sticky Header Wrapper -->
+        <div class="sticky top-0 z-50 px-4 sm:px-6 pt-4 sm:pt-8 pb-4 bg-zinc-950/80 backdrop-blur-xl border-b border-white/5 mb-6 sm:mb-8 transition-all">
+            <header class="max-w-2xl mx-auto flex items-end justify-between">
+                <div>
+                    <h1 class="text-3xl sm:text-4xl font-black tracking-tighter text-white drop-shadow-sm">Countdowns.</h1>
+                    <p class="text-sm font-medium tracking-wide text-zinc-400 mt-1">Track your upcoming events</p>
                 </div>
-                <!-- Add Button -->
-                <button onclick="openAddModal()" class="flex items-center justify-center h-10 w-10 rounded-full bg-white text-zinc-950 hover:bg-zinc-200 transition-colors shadow-lg shadow-white/10 ring-1 ring-white/20 active:scale-95">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                </button>
+                
+                <div class="flex items-center gap-3">
+                    <div id="pwa-status" class="hidden items-center justify-center rounded-full bg-zinc-800/80 ring-1 ring-white/10 backdrop-blur-sm px-4 py-1.5 text-xs font-bold tracking-wide text-zinc-300 shadow-sm">
+                        Ready
+                    </div>
+
+                    <!-- Security Passcode Toggle -->
+                    <button onclick="toggleSecurity()" id="security-btn" class="flex items-center justify-center h-10 w-10 rounded-full bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors shadow-sm ring-1 ring-white/10 active:scale-95">
+                        <svg id="security-icon-unlocked" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                        <svg id="security-icon-locked" class="w-4 h-4 hidden text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </button>
+
+                    <!-- Import Calendar Button -->
+                    <button onclick="openICalModal()" class="flex items-center justify-center h-10 w-10 rounded-full bg-zinc-800 text-blue-400 hover:text-blue-300 hover:bg-zinc-700 transition-colors shadow-sm ring-1 ring-white/10 active:scale-95" title="Import iCal">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </button>
+
+                    <!-- Add Button -->
+                    <button onclick="openAddModal()" class="flex items-center justify-center h-10 w-10 rounded-full bg-white text-zinc-950 hover:bg-zinc-200 transition-colors shadow-lg shadow-white/10 ring-1 ring-white/20 active:scale-95">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                </div>
+            </header>
+        </div>
+
+        <div class="max-w-2xl mx-auto p-4 sm:p-6 pb-20 pt-0 safe-area-pt">
+            <!-- View Toggles -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex p-1 bg-zinc-900/60 backdrop-blur-md rounded-xl border border-white/5 w-full sm:w-fit shadow-sm">
+                    <button onclick="switchView('created')" id="tab-created" class="flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all bg-zinc-800 text-white shadow-sm ring-1 ring-white/10">Personal</button>
+                    <button onclick="switchView('imported')" id="tab-imported" class="flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all text-zinc-500 hover:text-zinc-300">Imported</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="refetch-imported-btn" onclick="refetchICal()" class="hidden items-center gap-1.5 px-3 py-2 text-xs font-bold text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded-lg transition-colors border border-transparent hover:border-blue-500/20">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Refetch
+                    </button>
+                    <button id="clear-imported-btn" onclick="clearImported()" class="hidden items-center gap-1.5 px-3 py-2 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        Clear All
+                    </button>
+                </div>
             </div>
-        </header>
+
+            <main id="countdowns-container" class="space-y-6 sm:space-y-8 flex flex-col">
+                <!-- Cards will be injected here -->
+            </main>
+        </div>
     </div>
 
-    <div class="max-w-2xl mx-auto p-4 sm:p-6 pb-20 pt-0 safe-area-pt">
-        <main id="countdowns-container" class="space-y-6 sm:space-y-8 flex flex-col">
-            <!-- Cards will be injected here -->
-        </main>
-    </div>
-
-    <!-- Glassmorphism Add Modal -->
+    <!-- Glassmorphism Add/Edit Modal -->
     <dialog id="add-modal" class="bg-transparent p-0 m-auto backdrop:bg-black/60 backdrop:backdrop-blur-sm animate-in w-full max-w-md">
         <div class="bg-zinc-900/95 border border-white/10 shadow-2xl rounded-3xl p-6 m-4 backdrop-blur-xl text-zinc-50 max-h-[90vh] overflow-y-auto">
             <h3 id="modal-title" class="text-xl font-bold tracking-tight mb-4">New Countdown</h3>
@@ -160,23 +236,129 @@
         </div>
     </dialog>
 
+    <!-- Glassmorphism iCal Sync Modal -->
+    <dialog id="ical-modal" class="bg-transparent p-0 m-auto backdrop:bg-black/60 backdrop:backdrop-blur-sm animate-in w-full max-w-md">
+        <div class="bg-zinc-900/95 border border-white/10 shadow-2xl rounded-3xl p-6 m-4 backdrop-blur-xl text-zinc-50 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold tracking-tight mb-2 text-blue-400 flex items-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                Sync Calendar (iCal)
+            </h3>
+            <p class="text-sm text-zinc-400 mb-6">Paste a `.ics` or `webcal://` URL to automatically import upcoming events.</p>
+            
+            <form id="ical-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Calendar URL</label>
+                    <input type="text" id="ical-url" required placeholder="webcal://..." class="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+                
+                <div class="flex gap-3 pt-4 mt-6 border-t border-white/10">
+                    <button type="button" onclick="document.getElementById('ical-modal').close()" class="flex-1 py-3 rounded-xl font-semibold text-zinc-300 bg-zinc-800/50 hover:bg-zinc-800 transition-colors">Cancel</button>
+                    <button type="submit" id="ical-submit-btn" class="flex-1 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.3)] transition-colors flex items-center justify-center gap-2">
+                        <span>Import Events</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Custom Alert Modal (Replaces native alert) -->
+    <dialog id="alert-modal" class="bg-transparent p-0 m-auto backdrop:bg-black/60 backdrop:backdrop-blur-sm animate-in w-full max-w-sm z-[200]">
+        <div class="bg-zinc-900/95 border border-white/10 shadow-2xl rounded-3xl p-6 m-4 backdrop-blur-xl text-zinc-50 text-center">
+            <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h3 id="alert-title" class="text-xl font-bold tracking-tight mb-2">Alert</h3>
+            <p id="alert-message" class="text-sm text-zinc-400 mb-6">Message</p>
+            <button onclick="document.getElementById('alert-modal').close()" class="w-full py-3 rounded-xl font-bold text-zinc-950 bg-white hover:bg-zinc-200 transition-colors">Got it</button>
+        </div>
+    </dialog>
+
+    <!-- Custom Confirm Modal (Replaces native confirm) -->
+    <dialog id="confirm-modal" class="bg-transparent p-0 m-auto backdrop:bg-black/60 backdrop:backdrop-blur-sm animate-in w-full max-w-sm z-[200]">
+        <div class="bg-zinc-900/95 border border-white/10 shadow-2xl rounded-3xl p-6 m-4 backdrop-blur-xl text-zinc-50 text-center">
+            <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center text-red-400 border border-red-500/20">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 id="confirm-title" class="text-xl font-bold tracking-tight mb-2">Confirm</h3>
+            <p id="confirm-message" class="text-sm text-zinc-400 mb-6">Are you sure?</p>
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('confirm-modal').close()" class="flex-1 py-3 rounded-xl font-semibold text-zinc-300 bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-white/5">Cancel</button>
+                <button id="confirm-action-btn" class="flex-1 py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)] transition-colors border border-red-500/50">Confirm</button>
+            </div>
+        </div>
+    </dialog>
+
     <script>
-        // --- SECURITY / UTILITIES ---
-        // Prevents Cross-Site Scripting (XSS) from malicious URL injections or local storage edits
+        // --- Custom Alert & Confirm Helpers ---
+        window.customAlert = function(title, message) {
+            document.getElementById('alert-title').textContent = title;
+            document.getElementById('alert-message').textContent = message;
+            document.getElementById('alert-modal').showModal();
+        };
+
+        window.customConfirm = function(title, message, onConfirmCallback) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            const btn = document.getElementById('confirm-action-btn');
+            btn.onclick = function() {
+                document.getElementById('confirm-modal').close();
+                if(onConfirmCallback) onConfirmCallback();
+            };
+            document.getElementById('confirm-modal').showModal();
+        };
+
+        // --- 1. SECURITY & CRYPTOGRAPHY (AES-GCM Web Crypto API) ---
+        // Prevents Cross-Site Scripting (XSS) from malicious shared URLs
         function escapeHTML(str) {
             if (!str) return '';
             return str.toString().replace(/[&<>'"]/g, 
-                tag => ({
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    "'": '&#39;',
-                    '"': '&quot;'
-                }[tag] || tag)
+                tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag] || tag)
             );
         }
 
-        // --- THEMES MAP ---
+        function bufferToBase64(buf) {
+            const binstr = Array.prototype.map.call(new Uint8Array(buf), ch => String.fromCharCode(ch)).join('');
+            return btoa(binstr);
+        }
+        function base64ToBuffer(base64) {
+            const binstr = atob(base64);
+            const buf = new Uint8Array(binstr.length);
+            for(let i=0; i<binstr.length; i++) buf[i] = binstr.charCodeAt(i);
+            return buf.buffer;
+        }
+
+        async function deriveKey(pin) {
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(pin), {name: "PBKDF2"}, false, ["deriveKey"]);
+            const salt = enc.encode("CountdownsAppSalt123"); 
+            return crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+                keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+            );
+        }
+
+        async function encryptData(text, pin) {
+            const key = await deriveKey(pin);
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const enc = new TextEncoder();
+            const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, enc.encode(text));
+            
+            const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+            combined.set(iv, 0);
+            combined.set(new Uint8Array(ciphertext), iv.length);
+            return bufferToBase64(combined.buffer);
+        }
+
+        async function decryptData(base64, pin) {
+            const key = await deriveKey(pin);
+            const combined = new Uint8Array(base64ToBuffer(base64));
+            const iv = combined.slice(0, 12);
+            const data = combined.slice(12);
+            const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, data);
+            return new TextDecoder().decode(decrypted);
+        }
+
+        // --- 2. GLOBAL STATE & THEMES ---
         const themeMap = {
             zinc:   { border: 'border-white/5 hover:border-white/10 shadow-xl shadow-black/40', textPrimary: 'text-white', textSecondary: 'text-zinc-400', textLabel: 'text-zinc-500', bar: 'bg-zinc-400' },
             indigo: { border: 'border-indigo-500/30 hover:border-indigo-500/50 shadow-[0_0_30px_rgba(79,70,229,0.15)]', textPrimary: 'text-indigo-50', textSecondary: 'text-indigo-200/80', textLabel: 'text-indigo-400/70', bar: 'bg-indigo-500' },
@@ -185,80 +367,284 @@
             amber:  { border: 'border-amber-500/30 hover:border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.15)]', textPrimary: 'text-amber-50', textSecondary: 'text-amber-200/80', textLabel: 'text-amber-400/70', bar: 'bg-amber-500' }
         };
 
-        // --- INTERACTIVE STATE & STORAGE ---
-        let currentEditId = null; // Tracks if we are editing an existing item
-
         const defaultData = [
           { "title": "Barcelona Trip", "date": "2026-06-01T00:00:00", "id": "default-1", "emoji": "🇪🇸", "theme": "rose", "created": new Date().toISOString() },
           { "title": "Bangkok Bound", "date": "2026-06-05T00:00:00", "id": "default-2", "emoji": "🇹🇭", "theme": "amber", "created": new Date().toISOString() }
         ];
 
         let countdownData = [];
-        const savedData = JSON.parse(localStorage.getItem('countdownsData'));
+        let currentEditId = null;
+        let isAppLocked = localStorage.getItem('isAppLocked') === 'true';
+        let sessionPasscode = null;
+        let currentView = 'created';
+        let lastICalUrl = localStorage.getItem('lastICalUrl') || '';
 
-        if (savedData && Array.isArray(savedData)) {
-            // Load saved data and safely auto-fix legacy items lacking new features
-            countdownData = savedData.map(item => {
-                if (!item.id) item.id = 'legacy-' + Math.random().toString(36).substr(2, 9);
-                if (!item.emoji) item.emoji = "🗓️";
-                if (!item.theme) item.theme = "zinc";
-                if (!item.created) {
-                    const parsedTime = new Date(item.date).getTime();
-                    // Prevent RangeError if date string from legacy was unparsable
-                    item.created = isNaN(parsedTime) 
-                        ? new Date().toISOString() 
-                        : new Date(parsedTime - (1000 * 60 * 60 * 24 * 30)).toISOString();
+        window.switchView = function(view) {
+            currentView = view;
+            
+            const tabCreated = document.getElementById('tab-created');
+            const tabImported = document.getElementById('tab-imported');
+            const clearBtn = document.getElementById('clear-imported-btn');
+            const refetchBtn = document.getElementById('refetch-imported-btn');
+
+            if (view === 'created') {
+                tabCreated.className = "flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all bg-zinc-800 text-white shadow-sm ring-1 ring-white/10";
+                tabImported.className = "flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all text-zinc-500 hover:text-zinc-300";
+                clearBtn.classList.add('hidden');
+                clearBtn.classList.remove('flex');
+                refetchBtn.classList.add('hidden');
+                refetchBtn.classList.remove('flex');
+            } else {
+                tabImported.className = "flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all bg-zinc-800 text-white shadow-sm ring-1 ring-white/10";
+                tabCreated.className = "flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all text-zinc-500 hover:text-zinc-300";
+                clearBtn.classList.remove('hidden');
+                clearBtn.classList.add('flex');
+                if (lastICalUrl) {
+                    refetchBtn.classList.remove('hidden');
+                    refetchBtn.classList.add('flex');
                 }
-                return item;
+            }
+
+            renderInitialUI();
+            updateTimers();
+        };
+
+        window.clearImported = function() {
+            customConfirm("Clear All Imported", "Are you sure you want to remove all imported events and the synced calendar link?", async () => {
+                countdownData = countdownData.filter(item => !item.isICal);
+                lastICalUrl = '';
+                localStorage.removeItem('lastICalUrl');
+                await saveData();
+                switchView('imported');
             });
-        } else {
-            countdownData = [...defaultData];
+        };
+
+        window.openICalModal = function() {
+            if (lastICalUrl) document.getElementById('ical-url').value = lastICalUrl;
+            document.getElementById('ical-modal').showModal();
+        };
+
+
+        // --- 3. PASSCODE UI LOGIC ---
+        let currentPinInput = '';
+        let lockMode = 'unlock'; // 'unlock', 'setup', 'remove'
+
+        window.toggleSecurity = function() {
+            if (isAppLocked) {
+                updateLockScreenUI('remove');
+            } else {
+                updateLockScreenUI('setup');
+            }
+        };
+
+        function updateLockScreenUI(mode) {
+            lockMode = mode;
+            const title = document.getElementById('lock-title');
+            const subtitle = document.getElementById('lock-subtitle');
+            const cancelBtn = document.getElementById('pin-cancel-btn');
+            
+            document.getElementById('lock-screen').classList.remove('hidden');
+            setTimeout(() => document.getElementById('lock-screen').classList.remove('opacity-0'), 10);
+            document.getElementById('app-content').classList.add('hidden');
+
+            if (mode === 'unlock') {
+                title.textContent = "Enter Passcode";
+                subtitle.textContent = "Unlock your private countdowns";
+                cancelBtn.style.visibility = "hidden";
+                document.getElementById('pin-forgot-btn').classList.remove('hidden');
+            } else if (mode === 'setup') {
+                title.textContent = "Set Passcode";
+                subtitle.textContent = "Create a 4-digit PIN";
+                cancelBtn.style.visibility = "visible";
+                document.getElementById('pin-forgot-btn').classList.add('hidden');
+            } else if (mode === 'remove') {
+                title.textContent = "Remove Passcode";
+                subtitle.textContent = "Enter current PIN to disable security";
+                cancelBtn.style.visibility = "visible";
+                document.getElementById('pin-forgot-btn').classList.add('hidden');
+            }
+            
+            currentPinInput = '';
+            window.setupTempPin = null;
+            updateDots();
         }
 
-        saveData();
+        window.addPin = function(num) {
+            if(currentPinInput.length < 4) {
+                currentPinInput += num;
+                updateDots();
+                if(currentPinInput.length === 4) setTimeout(processPin, 100);
+            }
+        };
 
-        function saveData() {
-            localStorage.setItem('countdownsData', JSON.stringify(countdownData));
+        window.deletePin = function() {
+            if(currentPinInput.length > 0) {
+                currentPinInput = currentPinInput.slice(0, -1);
+                updateDots();
+            }
+        };
+
+        window.cancelPinAction = function() {
+            if(lockMode === 'unlock') return;
+            document.getElementById('lock-screen').classList.add('opacity-0');
+            setTimeout(() => document.getElementById('lock-screen').classList.add('hidden'), 300);
+            document.getElementById('app-content').classList.remove('hidden');
+            currentPinInput = '';
+            updateDots();
+        };
+
+        function updateDots() {
+            for(let i=1; i<=4; i++) {
+                const dot = document.getElementById(`pin-dot-${i}`);
+                if(i <= currentPinInput.length) {
+                    dot.classList.replace('border-zinc-700', 'border-white');
+                    dot.classList.replace('bg-transparent', 'bg-white');
+                } else {
+                    dot.classList.replace('border-white', 'border-zinc-700');
+                    dot.classList.replace('bg-white', 'bg-transparent');
+                }
+            }
         }
 
-        // --- URL PARAMETER PARSING (With Auto-Save) ---
-        const urlParams = new URLSearchParams(window.location.search);
-        let queryDate = urlParams.get('date');
-        const queryTitle = urlParams.get('title') || "Target Date";
-
-        function parseCustomDateString(dateStr) {
-            if (!dateStr) return null;
-            const match = dateStr.trim().match(/^(\d{1,2})\s*([a-zA-Z]+)$/);
-            if (!match) return null;
-
-            const day = parseInt(match[1], 10);
-            const monthStr = match[2].toLowerCase();
-            const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-            const monthIndex = months.findIndex(m => monthStr.startsWith(m));
-
-            if (monthIndex === -1) return null;
-
-            const now = new Date();
-            let targetYear = now.getFullYear();
-            let targetDate = new Date(targetYear, monthIndex, day);
-
-            if (targetDate.getMonth() !== monthIndex) return null;
-            if (targetDate.getTime() < now.getTime()) targetDate.setFullYear(targetYear + 1);
-
-            return targetDate.toISOString();
+        function triggerPinShake() {
+            const dots = document.getElementById('pin-dots-container');
+            dots.classList.add('animate-shake');
+            setTimeout(() => {
+                dots.classList.remove('animate-shake');
+                currentPinInput = '';
+                updateDots();
+            }, 400);
         }
 
-        if (queryDate) {
-            const customDate = parseCustomDateString(queryDate);
-            if (customDate) queryDate = customDate;
+        async function processPin() {
+            if(lockMode === 'unlock') {
+                const encryptedBase64 = localStorage.getItem('encryptedCountdownsData');
+                if (!encryptedBase64) {
+                    isAppLocked = false;
+                    localStorage.setItem('isAppLocked', 'false');
+                    cancelPinAction();
+                    finishInit();
+                    return;
+                }
+                try {
+                    const json = await decryptData(encryptedBase64, currentPinInput);
+                    const decryptedData = JSON.parse(json);
+                    
+                    sessionPasscode = currentPinInput;
+                    await loadAndMigrateData(decryptedData, false); 
+                    
+                    document.getElementById('lock-screen').classList.add('opacity-0');
+                    setTimeout(() => document.getElementById('lock-screen').classList.add('hidden'), 300);
+                    finishInit();
+                } catch (e) {
+                    triggerPinShake(); // Wrong PIN
+                }
+            } 
+            else if (lockMode === 'setup') {
+                if (!window.setupTempPin) {
+                    window.setupTempPin = currentPinInput;
+                    currentPinInput = '';
+                    updateDots();
+                    document.getElementById('lock-title').textContent = "Confirm Passcode";
+                } else {
+                    if (window.setupTempPin === currentPinInput) {
+                        sessionPasscode = currentPinInput;
+                        isAppLocked = true;
+                        localStorage.setItem('isAppLocked', 'true');
+                        await saveData(); 
+                        cancelPinAction();
+                        updateSecurityIcon();
+                    } else {
+                        triggerPinShake();
+                        window.setupTempPin = null;
+                        document.getElementById('lock-title').textContent = "Set Passcode";
+                    }
+                }
+            } 
+            else if (lockMode === 'remove') {
+                if (currentPinInput === sessionPasscode) {
+                    isAppLocked = false;
+                    sessionPasscode = null;
+                    localStorage.setItem('isAppLocked', 'false');
+                    localStorage.removeItem('encryptedCountdownsData');
+                    await saveData(); 
+                    cancelPinAction();
+                    updateSecurityIcon();
+                } else {
+                    triggerPinShake();
+                }
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!document.getElementById('lock-screen').classList.contains('hidden')) {
+                if (e.key >= '0' && e.key <= '9') addPin(e.key);
+                else if (e.key === 'Backspace') deletePin();
+                else if (e.key === 'Escape' && lockMode !== 'unlock') cancelPinAction();
+            }
+        });
+
+
+        // --- 4. DATA LOGIC ---
+        async function loadAndMigrateData(parsedData, doSave = true) {
+            if (parsedData && Array.isArray(parsedData) && parsedData.length > 0) {
+                countdownData = parsedData.map(item => {
+                    if (!item.id) item.id = 'legacy-' + Math.random().toString(36).substr(2, 9);
+                    if (!item.emoji) item.emoji = "🗓️";
+                    if (!item.theme) item.theme = "zinc";
+                    if (!item.created) {
+                        const parsedTime = new Date(item.date).getTime();
+                        item.created = isNaN(parsedTime) ? new Date().toISOString() : new Date(parsedTime - (1000 * 60 * 60 * 24 * 30)).toISOString();
+                    }
+                    return item;
+                });
+            } else {
+                countdownData = [...defaultData];
+            }
+            if(doSave) await saveData();
+        }
+
+        async function saveData() {
+            if (isAppLocked && sessionPasscode) {
+                const enc = await encryptData(JSON.stringify(countdownData), sessionPasscode);
+                localStorage.setItem('encryptedCountdownsData', enc);
+                localStorage.removeItem('countdownsData');
+            } else {
+                localStorage.setItem('countdownsData', JSON.stringify(countdownData));
+            }
+        }
+
+        function parseUrlForNewEvents() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let queryDate = urlParams.get('date');
+            const queryTitle = urlParams.get('title') || "Target Date";
+
+            if (!queryDate) return;
+
+            const match = queryDate.trim().match(/^(\d{1,2})\s*([a-zA-Z]+)$/);
+            if (match) {
+                const day = parseInt(match[1], 10);
+                const monthStr = match[2].toLowerCase();
+                const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+                const monthIndex = months.findIndex(m => monthStr.startsWith(m));
+
+                if (monthIndex !== -1) {
+                    const now = new Date();
+                    let targetYear = now.getFullYear();
+                    let targetDate = new Date(targetYear, monthIndex, day);
+                    if (targetDate.getMonth() === monthIndex) {
+                        if (targetDate.getTime() < now.getTime()) targetDate.setFullYear(targetYear + 1);
+                        queryDate = targetDate.toISOString();
+                    }
+                }
+            }
 
             if (!isNaN(Date.parse(queryDate))) {
                 const exists = countdownData.some(d => d.title === queryTitle && new Date(d.date).getTime() === new Date(queryDate).getTime());
-                
                 if (!exists) {
                     countdownData.push({
                         "id": Date.now().toString(),
-                        "title": queryTitle, // Will be sanitized in renderInitialUI
+                        "title": queryTitle, 
                         "date": queryDate,
                         "isPrimary": true,
                         "emoji": "🌟",
@@ -271,55 +657,236 @@
             }
         }
 
-        // --- AUTO-SORTING ---
         function sortData() {
             countdownData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         }
 
-        // --- DYNAMIC PWA SETUP (Manifest Only) ---
-        function setupPWA() {
-            const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="#ffffff"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z"/></svg>`;
-            const iconUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgIcon);
-
-            const manifest = {
-                name: "Countdowns",
-                short_name: "Countdowns",
-                description: "A minimal progressive web app for tracking countdowns.",
-                start_url: window.location.pathname,
-                display: "standalone",
-                background_color: "#09090b",
-                theme_color: "#09090b",
-                icons: [ { src: iconUrl, sizes: "192x192 512x512", type: "image/svg+xml", purpose: "any maskable" } ]
-            };
-
-            const manifestDataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
-            const link = document.createElement('link');
-            link.rel = 'manifest';
-            link.href = manifestDataUrl;
-            document.head.appendChild(link);
+        // --- 4.5 ICAL FETCH & PARSE LOGIC ---
+        function parseICalDate(dateStr) {
+            if (!dateStr) return null;
+            const year = dateStr.substring(0, 4);
+            const month = dateStr.substring(4, 6);
+            const day = dateStr.substring(6, 8);
             
-            const statusBadge = document.getElementById('pwa-status');
-            statusBadge.classList.remove('hidden');
-            statusBadge.classList.add('flex');
+            if (dateStr.includes('T')) {
+                const hour = dateStr.substring(9, 11);
+                const min = dateStr.substring(11, 13);
+                const sec = dateStr.substring(13, 15);
+                const z = dateStr.endsWith('Z') ? 'Z' : '';
+                return `${year}-${month}-${day}T${hour}:${min}:${sec}${z}`;
+            }
+            return `${year}-${month}-${day}T00:00:00`;
         }
 
-        // --- UI & COUNTDOWN LOGIC ---
+        async function processICalSync(rawUrl) {
+            let url = rawUrl.trim();
+            url = url.replace(/^webcal:\/\//i, 'https://');
+            
+            const proxies = [
+                `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+            ];
+            
+            let response = null;
+            for (const proxyUrl of proxies) {
+                try {
+                    const res = await fetch(proxyUrl);
+                    if (res.ok) {
+                        response = res;
+                        break;
+                    }
+                } catch (e) {
+                    console.warn("Proxy failed:", proxyUrl, e);
+                }
+            }
+            
+            if (!response) throw new Error('Network response was not ok across all proxies');
+            
+            const icsData = await response.text();
+            const lines = icsData.split(/\r\n|\n|\r/);
+            
+            let currentEvent = null;
+            const newEvents = [];
+            const now = new Date().getTime();
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+                while (i + 1 < lines.length && (lines[i + 1].startsWith(' ') || lines[i + 1].startsWith('\t'))) {
+                    i++;
+                    line += lines[i].substring(1);
+                }
+
+                if (line === 'BEGIN:VEVENT') {
+                    currentEvent = {};
+                } else if (line === 'END:VEVENT') {
+                    if (currentEvent && currentEvent.title && currentEvent.date) {
+                        const parsedDate = new Date(currentEvent.date).getTime();
+                        if (!isNaN(parsedDate) && parsedDate > now) {
+                            newEvents.push(currentEvent);
+                        }
+                    }
+                    currentEvent = null;
+                } else if (currentEvent) {
+                    if (line.startsWith('SUMMARY:')) {
+                        currentEvent.title = line.substring(8).replace(/\\,/g, ',').replace(/\\;/g, ';');
+                    } else if (line.startsWith('DTSTART')) {
+                        const parts = line.split(':');
+                        if (parts.length > 1) currentEvent.date = parseICalDate(parts[1]);
+                    }
+                }
+            }
+
+            if (newEvents.length === 0) {
+                return { added: 0, title: "No Events", msg: "No upcoming events found in this calendar." };
+            } else {
+                let added = 0;
+                newEvents.forEach(evt => {
+                    const evtTime = new Date(evt.date).getTime();
+                    const exists = countdownData.some(d => d.isICal && d.title === evt.title && new Date(d.date).getTime() === evtTime);
+                    if (!exists) {
+                        countdownData.push({
+                            id: 'ical-' + Date.now().toString() + Math.random().toString(36).substring(2, 6),
+                            emoji: "🗓️",
+                            title: evt.title,
+                            theme: "indigo",
+                            date: evt.date,
+                            created: new Date().toISOString(),
+                            isPrimary: false,
+                            isICal: true
+                        });
+                        added++;
+                    }
+                });
+                
+                if (added > 0) {
+                    await saveData();
+                    switchView('imported'); 
+                    return { added: added, title: "Import Successful", msg: `Successfully imported ${added} new upcoming events!` };
+                } else {
+                    return { added: 0, title: "Up to Date", msg: "Events are already synced up-to-date." };
+                }
+            }
+        }
+
+        document.getElementById('ical-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('ical-submit-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Syncing...`;
+            btn.disabled = true;
+
+            const url = document.getElementById('ical-url').value;
+
+            try {
+                const result = await processICalSync(url);
+                lastICalUrl = url;
+                localStorage.setItem('lastICalUrl', lastICalUrl);
+                document.getElementById('ical-modal').close();
+                customAlert(result.title, result.msg);
+            } catch (error) {
+                console.error("iCal Sync Error:", error);
+                customAlert("Sync Failed", "Failed to sync calendar. Please check if the URL is accessible and valid.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        window.refetchICal = async function() {
+            if(!lastICalUrl) return;
+            const btn = document.getElementById('refetch-imported-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Syncing...`;
+            btn.disabled = true;
+
+            try {
+                const result = await processICalSync(lastICalUrl);
+                customAlert(result.title || "Refetch Complete", result.msg);
+            } catch (error) {
+                console.error("iCal Sync Error:", error);
+                customAlert("Sync Failed", "Failed to sync calendar. Please check your connection.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        // --- 5. INITIALIZATION SEQUENCE ---
+        async function initApp() {
+            if (isAppLocked) {
+                updateLockScreenUI('unlock'); 
+            } else {
+                const plaintextData = JSON.parse(localStorage.getItem('countdownsData'));
+                await loadAndMigrateData(plaintextData, true);
+                finishInit();
+            }
+        }
+
+        function finishInit() {
+            parseUrlForNewEvents(); 
+            setupPWA();
+            updateSecurityIcon();
+            renderInitialUI();
+            updateTimers(); 
+            if(!window.timerInterval) {
+                window.timerInterval = setInterval(updateTimers, 1000);
+            }
+
+            const appContent = document.getElementById('app-content');
+            appContent.classList.remove('hidden');
+            setTimeout(() => appContent.classList.replace('opacity-0', 'opacity-100'), 50);
+        }
+
+        function updateSecurityIcon() {
+            if (isAppLocked) {
+                document.getElementById('security-icon-unlocked').classList.add('hidden');
+                document.getElementById('security-icon-locked').classList.remove('hidden');
+                document.getElementById('security-btn').classList.replace('text-zinc-300', 'text-emerald-400');
+            } else {
+                document.getElementById('security-icon-unlocked').classList.remove('hidden');
+                document.getElementById('security-icon-locked').classList.add('hidden');
+                document.getElementById('security-btn').classList.replace('text-emerald-400', 'text-zinc-300');
+            }
+        }
+
+        window.resetApp = function() {
+            customConfirm("Factory Reset", "WARNING: This will permanently delete ALL your private countdowns. You cannot recover them without your passcode. Are you sure?", () => {
+                localStorage.clear();
+                location.reload();
+            });
+        };
+
+        // --- 6. STANDARD UI & PWA LOGIC ---
+        function setupPWA() {
+            const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="#ffffff"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z"/></svg>`;
+            const manifest = {
+                name: "Countdowns", short_name: "Countdowns",
+                start_url: window.location.pathname, display: "standalone",
+                background_color: "#09090b", theme_color: "#09090b",
+                icons: [ { src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgIcon), sizes: "192x192 512x512", type: "image/svg+xml", purpose: "any maskable" } ]
+            };
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+            document.head.appendChild(link);
+            document.getElementById('pwa-status').classList.replace('hidden', 'flex');
+        }
+
         const container = document.getElementById('countdowns-container');
 
         function formatDate(dateStr) {
-            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
             const parsedDate = new Date(dateStr);
-            return isNaN(parsedDate) ? 'Invalid Date' : parsedDate.toLocaleDateString(undefined, options);
+            return isNaN(parsedDate) ? 'Invalid Date' : parsedDate.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
 
-        // Action Handlers
         window.deleteEvent = function(id) {
-            if(confirm("Are you sure you want to remove this countdown?")) {
+            customConfirm("Delete Countdown", "Are you sure you want to remove this countdown?", async () => {
                 countdownData = countdownData.filter(item => item.id !== id);
-                saveData();
+                await saveData();
                 renderInitialUI();
                 updateTimers();
-            }
+            });
         };
 
         window.openAddModal = function() {
@@ -342,17 +909,10 @@
             document.getElementById('event-emoji').value = item.emoji || "✨";
             document.getElementById('event-title').value = item.title;
 
-            // Parse local date strictly to prepopulate input fields
             const dateObj = new Date(item.date);
             if (!isNaN(dateObj.getTime())) {
-                const yyyy = dateObj.getFullYear();
-                const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-                const dd = String(dateObj.getDate()).padStart(2, '0');
-                document.getElementById('event-date').value = `${yyyy}-${mm}-${dd}`;
-
-                const hh = String(dateObj.getHours()).padStart(2, '0');
-                const min = String(dateObj.getMinutes()).padStart(2, '0');
-                document.getElementById('event-time').value = `${hh}:${min}`;
+                document.getElementById('event-date').value = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                document.getElementById('event-time').value = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
             }
 
             const themeRadio = document.querySelector(`input[name="event-theme"][value="${item.theme}"]`);
@@ -364,159 +924,132 @@
         window.shareEvent = async function(id) {
             const item = countdownData.find(i => i.id === id);
             if (!item) return;
-            
             const shareUrl = `${window.location.origin}${window.location.pathname}?title=${encodeURIComponent(item.title)}&date=${encodeURIComponent(item.date)}`;
-            const shareData = { title: item.title, text: `Countdown to ${item.title}!`, url: shareUrl };
-
-            if (navigator.share && navigator.canShare(shareData)) {
-                try { await navigator.share(shareData); } catch (err) { console.log("Share cancelled"); }
+            if (navigator.share && navigator.canShare({url: shareUrl})) {
+                try { await navigator.share({ title: item.title, text: `Countdown to ${item.title}!`, url: shareUrl }); } catch (err) {}
             } else {
                 navigator.clipboard.writeText(shareUrl);
-                alert("Share link copied to clipboard!");
+                customAlert("Copied", "Share link copied to clipboard!");
             }
         };
 
         function renderInitialUI() {
             sortData(); 
             
-            if (countdownData.length === 0) {
+            const filteredData = countdownData.filter(item => currentView === 'imported' ? item.isICal : !item.isICal);
+
+            if (filteredData.length === 0) {
+                const emptyMsg = currentView === 'imported' 
+                    ? "No synced events found. Click the calendar icon to import via iCal."
+                    : "Add an event using the + button above to get started.";
+                const emptyTitle = currentView === 'imported' ? "No Imported Events" : "No Countdowns";
+                const svgPath = currentView === 'imported' 
+                    ? 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' 
+                    : 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z';
+
                 container.innerHTML = `
                     <div class="text-center py-20 px-6 border border-white/5 rounded-3xl bg-zinc-900/30 backdrop-blur-sm">
                         <div class="w-16 h-16 mx-auto mb-4 bg-zinc-800/80 rounded-full flex items-center justify-center text-zinc-500">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${svgPath}"></path></svg>
                         </div>
-                        <h3 class="text-xl font-bold text-white mb-2">No Countdowns</h3>
-                        <p class="text-zinc-500 text-sm">Add an event using the + button above to get started.</p>
+                        <h3 class="text-xl font-bold text-white mb-2">${emptyTitle}</h3>
+                        <p class="text-zinc-500 text-sm">${emptyMsg}</p>
                     </div>`;
                 return;
             }
 
-            container.innerHTML = countdownData.map((item, index) => {
-                const isPrimary = item.isPrimary;
+            container.innerHTML = filteredData.map((item) => {
+                const id = item.id;
                 const theme = themeMap[item.theme] || themeMap.zinc;
-                
-                // CRITICAL FIX: Escape HTML to prevent Reflected XSS from URL parameters or local storage tampering
                 const safeEmoji = escapeHTML(item.emoji || "🗓️");
                 const safeTitle = escapeHTML(item.title);
                 
-                const cardBorder = `${theme.border} bg-zinc-900/80`;
-                const dayColor = theme.textPrimary;
-                const otherColor = theme.textSecondary;
-                const labelColor = theme.textLabel;
-                
-                const badge = isPrimary 
-                    ? `<div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 px-3 py-1 mb-4 border border-indigo-500/20 w-fit">
-                         <span class="relative flex h-2 w-2">
-                           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                           <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                         </span>
+                let badge = '';
+                if (item.isPrimary) {
+                    badge = `<div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 px-3 py-1 mb-4 border border-indigo-500/20 w-fit">
+                         <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span></span>
                          <span class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">Shared Event</span>
-                       </div>`
-                    : '';
+                       </div>`;
+                } else if (item.isICal) {
+                    badge = `<div class="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 mb-4 border border-blue-500/20 w-fit">
+                         <svg class="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                         <span class="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Imported</span>
+                       </div>`;
+                }
 
                 return `
-                    <div id="card-${index}" class="group relative flex flex-col rounded-3xl border backdrop-blur-md p-6 sm:p-8 transition-all duration-300 overflow-hidden ${cardBorder}">
-                        ${isPrimary ? `<div class="absolute top-0 left-0 w-full h-1 ${theme.bar}"></div>` : ''}
+                    <div id="card-${id}" class="group relative flex flex-col rounded-3xl border backdrop-blur-md p-6 sm:p-8 transition-all duration-300 overflow-hidden ${theme.border} bg-zinc-900/80">
+                        ${item.isPrimary || item.isICal ? `<div class="absolute top-0 left-0 w-full h-1 ${theme.bar}"></div>` : ''}
                         
                         <!-- Top Actions -->
                         <div class="absolute top-6 right-6 flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10">
-                            <button onclick="shareEvent('${item.id}')" class="p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-                            </button>
-                            <button onclick="openEditModal('${item.id}')" class="p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                            </button>
-                            <button onclick="deleteEvent('${item.id}')" class="p-2 bg-zinc-800/80 hover:bg-red-500/20 rounded-full text-zinc-300 hover:text-red-400 transition-colors border border-white/5">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
+                            <button onclick="shareEvent('${id}')" class="p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg></button>
+                            ${!item.isICal ? `<button onclick="openEditModal('${id}')" class="p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>` : ''}
+                            <button onclick="deleteEvent('${id}')" class="p-2 bg-zinc-800/80 hover:bg-red-500/20 rounded-full text-zinc-300 hover:text-red-400 transition-colors border border-white/5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                         </div>
 
                         ${badge}
-                        
                         <div class="flex items-center gap-4 mb-2 pr-20">
                             <span class="text-3xl sm:text-4xl drop-shadow-md bg-white/5 rounded-xl p-2 border border-white/5">${safeEmoji}</span>
                             <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">${safeTitle}</h2>
                         </div>
-                        
                         <p class="text-sm font-medium text-zinc-400 mb-8 flex items-center gap-2">
                             <svg class="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             ${formatDate(item.date)}
                         </p>
                         
-                        <div id="status-${index}" class="hidden w-full bg-emerald-500/10 rounded-2xl py-6 mt-2 text-center border border-emerald-500/20 backdrop-blur-sm mb-2">
-                            <span class="text-sm font-bold uppercase tracking-widest text-emerald-400 flex items-center justify-center gap-2">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                Event Reached
-                            </span>
+                        <div id="status-${id}" class="hidden w-full bg-emerald-500/10 rounded-2xl py-6 mt-2 text-center border border-emerald-500/20 backdrop-blur-sm mb-2">
+                            <span class="text-sm font-bold uppercase tracking-widest text-emerald-400 flex items-center justify-center gap-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Event Reached</span>
                         </div>
 
-                        <div id="grid-${index}" class="flex flex-col sm:flex-row sm:items-end gap-6 sm:gap-8 mt-2 mb-4">
+                        <div id="grid-${id}" class="flex flex-col sm:flex-row sm:items-end gap-6 sm:gap-8 mt-2 mb-4">
                             <div class="flex flex-col">
-                                <span class="text-[10px] sm:text-xs font-bold ${labelColor} uppercase tracking-[0.2em] mb-1">Days</span>
-                                <span id="val-${index}-Days" class="text-6xl sm:text-7xl font-black ${dayColor} tabular-nums tracking-tighter leading-none inline-block drop-shadow-md">0</span>
+                                <span class="text-[10px] sm:text-xs font-bold ${theme.textLabel} uppercase tracking-[0.2em] mb-1">Days</span>
+                                <span id="val-${id}-Days" class="text-6xl sm:text-7xl font-black ${theme.textPrimary} tabular-nums tracking-tighter leading-none inline-block drop-shadow-md">0</span>
                             </div>
-                            
                             <div class="hidden sm:block w-px h-12 bg-white/10 mb-1"></div>
-
                             <div class="flex gap-5 sm:gap-6">
-                                <div class="flex flex-col">
-                                    <span class="text-[10px] sm:text-xs font-bold ${labelColor} uppercase tracking-[0.2em] mb-1">Hours</span>
-                                    <span id="val-${index}-Hours" class="text-3xl sm:text-4xl font-bold ${otherColor} tabular-nums tracking-tighter leading-none inline-block">00</span>
-                                </div>
-                                <div class="flex flex-col">
-                                    <span class="text-[10px] sm:text-xs font-bold ${labelColor} uppercase tracking-[0.2em] mb-1">Mins</span>
-                                    <span id="val-${index}-Mins" class="text-3xl sm:text-4xl font-bold ${otherColor} tabular-nums tracking-tighter leading-none inline-block">00</span>
-                                </div>
-                                <div class="flex flex-col">
-                                    <span class="text-[10px] sm:text-xs font-bold ${labelColor} uppercase tracking-[0.2em] mb-1">Secs</span>
-                                    <span id="val-${index}-Secs" class="text-3xl sm:text-4xl font-bold ${otherColor} tabular-nums tracking-tighter leading-none inline-block">00</span>
-                                </div>
+                                <div class="flex flex-col"><span class="text-[10px] sm:text-xs font-bold ${theme.textLabel} uppercase tracking-[0.2em] mb-1">Hours</span><span id="val-${id}-Hours" class="text-3xl sm:text-4xl font-bold ${theme.textSecondary} tabular-nums tracking-tighter leading-none inline-block">00</span></div>
+                                <div class="flex flex-col"><span class="text-[10px] sm:text-xs font-bold ${theme.textLabel} uppercase tracking-[0.2em] mb-1">Mins</span><span id="val-${id}-Mins" class="text-3xl sm:text-4xl font-bold ${theme.textSecondary} tabular-nums tracking-tighter leading-none inline-block">00</span></div>
+                                <div class="flex flex-col"><span class="text-[10px] sm:text-xs font-bold ${theme.textLabel} uppercase tracking-[0.2em] mb-1">Secs</span><span id="val-${id}-Secs" class="text-3xl sm:text-4xl font-bold ${theme.textSecondary} tabular-nums tracking-tighter leading-none inline-block">00</span></div>
                             </div>
                         </div>
 
-                        <!-- Progress Bar -->
                         <div class="absolute bottom-0 left-0 w-full h-1.5 bg-black/40">
-                            <div id="progress-${index}" class="h-full ${theme.bar} transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(255,255,255,0.2)]" style="width: 0%"></div>
+                            <div id="progress-${id}" class="h-full ${theme.bar} transition-all duration-1000 ease-linear shadow-[0_0_10px_rgba(255,255,255,0.2)]" style="width: 0%"></div>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        // Helper to update text with CSS Animation
         function updateAnimatedText(elementId, newValue) {
             const el = document.getElementById(elementId);
-            if (!el) return;
-            const currentVal = el.textContent;
-            if (currentVal !== newValue.toString()) {
+            if (el && el.textContent !== newValue.toString()) {
                 el.textContent = newValue;
-                // Retrigger animation
                 el.classList.remove('animate-tick');
-                void el.offsetWidth; // trigger reflow
+                void el.offsetWidth; 
                 el.classList.add('animate-tick');
             }
         }
 
         function updateTimers() {
             const now = new Date().getTime();
-
-            countdownData.forEach((item, index) => {
+            countdownData.forEach((item) => {
                 const target = new Date(item.date).getTime();
                 const diff = target - now;
 
-                const statusEl = document.getElementById(`status-${index}`);
-                const gridEl = document.getElementById(`grid-${index}`);
-                const cardEl = document.getElementById(`card-${index}`);
-                const progressEl = document.getElementById(`progress-${index}`);
+                const statusEl = document.getElementById(`status-${item.id}`);
+                const gridEl = document.getElementById(`grid-${item.id}`);
+                const cardEl = document.getElementById(`card-${item.id}`);
+                const progressEl = document.getElementById(`progress-${item.id}`);
 
-                if (!statusEl || !gridEl) return;
+                if (!statusEl || !gridEl) return; 
 
                 if (diff <= 0) {
                     statusEl.classList.remove('hidden');
                     gridEl.classList.add('hidden');
                     if (progressEl) progressEl.style.width = '100%';
-                    
-                    // Trigger Confetti Once
                     if (!item.confettiFired) {
                         if (typeof confetti !== 'undefined') confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
                         item.confettiFired = true; 
@@ -527,82 +1060,43 @@
                     gridEl.classList.remove('hidden');
                 }
 
-                // Urgency State (< 24h)
-                if (diff < 86400000) {
-                    if (cardEl && !cardEl.classList.contains('animate-glow-pulse')) {
-                        cardEl.classList.add('animate-glow-pulse');
-                    }
-                } else {
-                    if (cardEl) cardEl.classList.remove('animate-glow-pulse');
-                }
+                if (diff < 86400000) { if (cardEl && !cardEl.classList.contains('animate-glow-pulse')) cardEl.classList.add('animate-glow-pulse'); }
+                else { if (cardEl) cardEl.classList.remove('animate-glow-pulse'); }
 
-                // Progress Bar Calc - FIX: Prevent Division by zero (NaN evaluation)
                 if (progressEl) {
                     const createdTime = item.created ? new Date(item.created).getTime() : (target - (1000 * 60 * 60 * 24 * 30));
                     const total = target - createdTime;
                     const elapsed = now - createdTime;
-                    
-                    let percent = 100;
-                    if (total > 0) {
-                        percent = Math.max(0, Math.min(100, (elapsed / total) * 100));
-                    }
-                    progressEl.style.width = `${percent}%`;
+                    progressEl.style.width = `${total > 0 ? Math.max(0, Math.min(100, (elapsed / total) * 100)) : 100}%`;
                 }
 
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const secs = Math.floor((diff % (1000 * 60)) / 1000);
-
-                updateAnimatedText(`val-${index}-Days`, days);
-                updateAnimatedText(`val-${index}-Hours`, hours.toString().padStart(2, '0'));
-                updateAnimatedText(`val-${index}-Mins`, mins.toString().padStart(2, '0'));
-                updateAnimatedText(`val-${index}-Secs`, secs.toString().padStart(2, '0'));
+                updateAnimatedText(`val-${item.id}-Days`, Math.floor(diff / (1000 * 60 * 60 * 24)));
+                updateAnimatedText(`val-${item.id}-Hours`, Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0'));
+                updateAnimatedText(`val-${item.id}-Mins`, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0'));
+                updateAnimatedText(`val-${item.id}-Secs`, Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0'));
             });
         }
 
-        // Handle Add Form Submission
-        document.getElementById('add-form').addEventListener('submit', function(e) {
+        document.getElementById('add-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const emoji = document.getElementById('event-emoji').value;
-            const title = document.getElementById('event-title').value;
-            const theme = document.querySelector('input[name="event-theme"]:checked').value;
-            const dateStr = document.getElementById('event-date').value;
-            const timeStr = document.getElementById('event-time').value;
+            const fullDate = `${document.getElementById('event-date').value}T${document.getElementById('event-time').value}:00`;
+            if (isNaN(new Date(fullDate).getTime())) return customAlert("Invalid Date", "Please enter a valid date and time.");
             
-            // Combine date and time
-            const fullDate = `${dateStr}T${timeStr}:00`;
-
-            // CRITICAL FIX: Validate date so it doesn't break Math calculations internally
-            if (isNaN(new Date(fullDate).getTime())) {
-                alert("Please enter a valid date and time.");
-                return;
-            }
+            const newData = {
+                emoji: document.getElementById('event-emoji').value,
+                title: document.getElementById('event-title').value,
+                theme: document.querySelector('input[name="event-theme"]:checked').value,
+                date: fullDate
+            };
             
             if (currentEditId) {
-                // Update existing event
-                const itemIndex = countdownData.findIndex(i => i.id === currentEditId);
-                if (itemIndex > -1) {
-                    countdownData[itemIndex].emoji = emoji;
-                    countdownData[itemIndex].title = title;
-                    countdownData[itemIndex].theme = theme;
-                    countdownData[itemIndex].date = fullDate;
-                    // Note: We deliberately do NOT update .created to maintain accurate progress bars
-                }
+                const idx = countdownData.findIndex(i => i.id === currentEditId);
+                if (idx > -1) countdownData[idx] = { ...countdownData[idx], ...newData };
             } else {
-                // Add new event
-                countdownData.push({
-                    id: Date.now().toString(),
-                    emoji: emoji,
-                    title: title,
-                    theme: theme,
-                    date: fullDate,
-                    created: new Date().toISOString(),
-                    isPrimary: false
-                });
+                countdownData.push({ id: Date.now().toString(), created: new Date().toISOString(), isPrimary: false, ...newData });
             }
             
-            saveData();
+            await saveData();
             document.getElementById('add-modal').close();
             this.reset();
             currentEditId = null;
@@ -611,11 +1105,8 @@
             updateTimers();
         });
 
-        // --- INITIALIZATION ---
-        setupPWA();
-        renderInitialUI();
-        updateTimers(); // Run once immediately
-        setInterval(updateTimers, 1000);
+        // Trigger Startup
+        initApp();
 
     </script>
 </body>
