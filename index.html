@@ -305,7 +305,25 @@
         </div>
     </dialog>
 
-    <!-- Custom Alert Modal (Replaces native alert) -->
+    <!-- Custom Prompt Modal -->
+    <dialog id="prompt-modal" class="bg-transparent p-0 m-auto backdrop:bg-black/60 backdrop:backdrop-blur-sm animate-in w-full max-w-sm z-[200]">
+        <div class="bg-zinc-900/95 border border-white/10 shadow-2xl rounded-3xl p-6 m-4 backdrop-blur-xl text-zinc-50 text-center">
+            <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            </div>
+            <h3 id="prompt-title" class="text-xl font-bold tracking-tight mb-2">Title</h3>
+            <p id="prompt-message" class="text-sm text-zinc-400 mb-6">Message</p>
+            <form id="prompt-form" class="space-y-4">
+                <input type="text" id="prompt-input" required class="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm">
+                <div class="flex gap-3">
+                    <button type="button" onclick="document.getElementById('prompt-modal').close()" class="flex-1 py-3 rounded-xl font-semibold text-zinc-300 bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-white/5">Cancel</button>
+                    <button type="submit" class="flex-1 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.3)] transition-colors border border-blue-500/50">Save</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Custom Alert Modal -->
     <dialog id="alert-modal" class="bg-transparent p-0 m-auto backdrop:bg-black/60 backdrop:backdrop-blur-sm animate-in w-full max-w-sm z-[200]">
         <div class="bg-zinc-900/95 border border-white/10 shadow-2xl rounded-3xl p-6 m-4 backdrop-blur-xl text-zinc-50 text-center">
             <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
@@ -317,7 +335,7 @@
         </div>
     </dialog>
 
-    <!-- Custom Confirm Modal (Replaces native confirm) -->
+    <!-- Custom Confirm Modal -->
     <dialog id="confirm-modal" class="bg-transparent p-0 m-auto backdrop:bg-black/60 backdrop:backdrop-blur-sm animate-in w-full max-w-sm z-[200]">
         <div class="bg-zinc-900/95 border border-white/10 shadow-2xl rounded-3xl p-6 m-4 backdrop-blur-xl text-zinc-50 text-center">
             <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center text-red-400 border border-red-500/20">
@@ -333,7 +351,7 @@
     </dialog>
 
     <script>
-        // --- Custom Alert & Confirm Helpers ---
+        // --- Custom Alert, Confirm & Prompt Helpers ---
         window.customAlert = function(title, message) {
             document.getElementById('alert-title').textContent = title;
             document.getElementById('alert-message').textContent = message;
@@ -351,8 +369,32 @@
             document.getElementById('confirm-modal').showModal();
         };
 
+        window.customPrompt = function(title, message, placeholder, onConfirmCallback) {
+            document.getElementById('prompt-title').textContent = title;
+            document.getElementById('prompt-message').textContent = message;
+            const input = document.getElementById('prompt-input');
+            input.placeholder = placeholder || '';
+            input.value = '';
+            
+            const form = document.getElementById('prompt-form');
+            form.onsubmit = function(e) {
+                e.preventDefault();
+                document.getElementById('prompt-modal').close();
+                if(onConfirmCallback) onConfirmCallback(input.value.trim());
+            };
+            
+            const modal = document.getElementById('prompt-modal');
+            modal.onclose = function() {
+                if(onConfirmCallback && modal.returnValue !== 'submitted') {
+                    // Handled to clear url state if canceled via backdrop click or cancel button
+                    if (document.activeElement !== form) onConfirmCallback(null); 
+                }
+            };
+            
+            modal.showModal();
+        };
+
         // --- 1. SECURITY & CRYPTOGRAPHY (AES-GCM Web Crypto API) ---
-        // Prevents Cross-Site Scripting (XSS) from malicious shared URLs
         function escapeHTML(str) {
             if (!str) return '';
             return str.toString().replace(/[&<>'"]/g, 
@@ -663,43 +705,78 @@
         function parseUrlForNewEvents() {
             const urlParams = new URLSearchParams(window.location.search);
             let queryDate = urlParams.get('date');
-            const queryTitle = urlParams.get('title') || "Target Date";
+            let queryTime = urlParams.get('time');
+            let queryTitle = urlParams.get('title');
 
-            if (!queryDate) return;
+            let targetDateStr = null;
 
-            const match = queryDate.trim().match(/^(\d{1,2})\s*([a-zA-Z]+)$/);
-            if (match) {
-                const day = parseInt(match[1], 10);
-                const monthStr = match[2].toLowerCase();
-                const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-                const monthIndex = months.findIndex(m => monthStr.startsWith(m));
+            if (queryDate) {
+                const match = queryDate.trim().match(/^(\d{1,2})\s*([a-zA-Z]+)$/);
+                if (match) {
+                    const day = parseInt(match[1], 10);
+                    const monthStr = match[2].toLowerCase();
+                    const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+                    const monthIndex = months.findIndex(m => monthStr.startsWith(m));
 
-                if (monthIndex !== -1) {
-                    const now = new Date();
-                    let targetYear = now.getFullYear();
-                    let targetDate = new Date(targetYear, monthIndex, day);
-                    if (targetDate.getMonth() === monthIndex) {
-                        if (targetDate.getTime() < now.getTime()) targetDate.setFullYear(targetYear + 1);
-                        queryDate = targetDate.toISOString();
+                    if (monthIndex !== -1) {
+                        const now = new Date();
+                        let targetYear = now.getFullYear();
+                        let targetDate = new Date(targetYear, monthIndex, day);
+                        if (targetDate.getMonth() === monthIndex) {
+                            if (targetDate.getTime() < now.getTime()) targetDate.setFullYear(targetYear + 1);
+                            targetDateStr = targetDate.toISOString();
+                        }
                     }
+                } else {
+                    targetDateStr = queryDate;
+                }
+            } else if (queryTime) {
+                // e.g. "2mins", "2m", "1 hour", "5d"
+                const match = queryTime.trim().match(/^(\d+)\s*(m|min|mins|minute|minutes|h|hr|hour|hours|d|day|days)$/i);
+                if (match) {
+                    const val = parseInt(match[1], 10);
+                    const unit = match[2].toLowerCase();
+                    let multiplier = 1000;
+                    if (unit.startsWith('m')) multiplier = 60 * 1000;
+                    else if (unit.startsWith('h')) multiplier = 60 * 60 * 1000;
+                    else if (unit.startsWith('d')) multiplier = 24 * 60 * 60 * 1000;
+                    
+                    targetDateStr = new Date(Date.now() + val * multiplier).toISOString();
                 }
             }
 
-            if (!isNaN(Date.parse(queryDate))) {
-                const exists = countdownData.some(d => d.title === queryTitle && new Date(d.date).getTime() === new Date(queryDate).getTime());
-                if (!exists) {
-                    countdownData.push({
-                        "id": Date.now().toString(),
-                        "title": queryTitle, 
-                        "date": queryDate,
-                        "isPrimary": true,
-                        "emoji": "🌟",
-                        "theme": "indigo",
-                        "tasks": [],
-                        "created": new Date().toISOString()
-                    });
-                    saveData();
+            if (targetDateStr && !isNaN(Date.parse(targetDateStr))) {
+                const processNewEvent = async (titleToUse) => {
+                    const exists = countdownData.some(d => d.title === titleToUse && new Date(d.date).getTime() === new Date(targetDateStr).getTime());
+                    if (!exists) {
+                        countdownData.push({
+                            "id": Date.now().toString(),
+                            "title": titleToUse, 
+                            "date": targetDateStr,
+                            "isPrimary": true,
+                            "emoji": "🌟",
+                            "theme": "indigo",
+                            "tasks": [],
+                            "created": new Date().toISOString()
+                        });
+                        await saveData();
+                        renderInitialUI();
+                        updateTimers();
+                    }
                     window.history.replaceState({}, document.title, window.location.pathname);
+                };
+
+                if (!queryTitle) {
+                    customPrompt("Name your Countdown", "You've shared a new target. What should we call it?", "e.g., Pizza Time", (title) => {
+                        if (title) {
+                            processNewEvent(title);
+                        } else {
+                            // User canceled the prompt, still clean the URL
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }
+                    });
+                } else {
+                    processNewEvent(queryTitle);
                 }
             }
         }
