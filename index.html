@@ -87,7 +87,7 @@
                     Ready
                 </div>
                 <!-- Add Button -->
-                <button onclick="document.getElementById('add-modal').showModal()" class="flex items-center justify-center h-10 w-10 rounded-full bg-white text-zinc-950 hover:bg-zinc-200 transition-colors shadow-lg shadow-white/10 ring-1 ring-white/20 active:scale-95">
+                <button onclick="openAddModal()" class="flex items-center justify-center h-10 w-10 rounded-full bg-white text-zinc-950 hover:bg-zinc-200 transition-colors shadow-lg shadow-white/10 ring-1 ring-white/20 active:scale-95">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                 </button>
             </div>
@@ -103,7 +103,7 @@
     <!-- Glassmorphism Add Modal -->
     <dialog id="add-modal" class="bg-transparent p-0 m-auto backdrop:bg-black/60 backdrop:backdrop-blur-sm animate-in w-full max-w-md">
         <div class="bg-zinc-900/95 border border-white/10 shadow-2xl rounded-3xl p-6 m-4 backdrop-blur-xl text-zinc-50 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-xl font-bold tracking-tight mb-4">New Countdown</h3>
+            <h3 id="modal-title" class="text-xl font-bold tracking-tight mb-4">New Countdown</h3>
             <form id="add-form" class="space-y-4">
                 <div class="flex gap-4">
                     <div class="w-24">
@@ -154,7 +154,7 @@
                 </div>
                 <div class="flex gap-3 pt-4 mt-6 border-t border-white/10">
                     <button type="button" onclick="document.getElementById('add-modal').close()" class="flex-1 py-3 rounded-xl font-semibold text-zinc-300 bg-zinc-800/50 hover:bg-zinc-800 transition-colors">Cancel</button>
-                    <button type="submit" class="flex-1 py-3 rounded-xl font-bold text-zinc-950 bg-white hover:bg-zinc-200 shadow-[0_0_15px_rgba(255,255,255,0.2)] transition-colors">Save Event</button>
+                    <button type="submit" id="submit-btn" class="flex-1 py-3 rounded-xl font-bold text-zinc-950 bg-white hover:bg-zinc-200 shadow-[0_0_15px_rgba(255,255,255,0.2)] transition-colors">Save Event</button>
                 </div>
             </form>
         </div>
@@ -186,6 +186,8 @@
         };
 
         // --- INTERACTIVE STATE & STORAGE ---
+        let currentEditId = null; // Tracks if we are editing an existing item
+
         const defaultData = [
           { "title": "Barcelona Trip", "date": "2026-06-01T00:00:00", "id": "default-1", "emoji": "🇪🇸", "theme": "rose", "created": new Date().toISOString() },
           { "title": "Bangkok Bound", "date": "2026-06-05T00:00:00", "id": "default-2", "emoji": "🇹🇭", "theme": "amber", "created": new Date().toISOString() }
@@ -320,6 +322,45 @@
             }
         };
 
+        window.openAddModal = function() {
+            currentEditId = null;
+            document.getElementById('modal-title').textContent = "New Countdown";
+            document.getElementById('submit-btn').textContent = "Save Event";
+            document.getElementById('add-form').reset();
+            document.querySelector('input[name="event-theme"][value="zinc"]').checked = true;
+            document.getElementById('add-modal').showModal();
+        };
+
+        window.openEditModal = function(id) {
+            const item = countdownData.find(i => i.id === id);
+            if (!item) return;
+
+            currentEditId = id;
+            document.getElementById('modal-title').textContent = "Edit Countdown";
+            document.getElementById('submit-btn').textContent = "Update Event";
+
+            document.getElementById('event-emoji').value = item.emoji || "✨";
+            document.getElementById('event-title').value = item.title;
+
+            // Parse local date strictly to prepopulate input fields
+            const dateObj = new Date(item.date);
+            if (!isNaN(dateObj.getTime())) {
+                const yyyy = dateObj.getFullYear();
+                const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const dd = String(dateObj.getDate()).padStart(2, '0');
+                document.getElementById('event-date').value = `${yyyy}-${mm}-${dd}`;
+
+                const hh = String(dateObj.getHours()).padStart(2, '0');
+                const min = String(dateObj.getMinutes()).padStart(2, '0');
+                document.getElementById('event-time').value = `${hh}:${min}`;
+            }
+
+            const themeRadio = document.querySelector(`input[name="event-theme"][value="${item.theme}"]`);
+            if (themeRadio) themeRadio.checked = true;
+
+            document.getElementById('add-modal').showModal();
+        };
+
         window.shareEvent = async function(id) {
             const item = countdownData.find(i => i.id === id);
             if (!item) return;
@@ -381,6 +422,9 @@
                         <div class="absolute top-6 right-6 flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10">
                             <button onclick="shareEvent('${item.id}')" class="p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                            </button>
+                            <button onclick="openEditModal('${item.id}')" class="p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
                             <button onclick="deleteEvent('${item.id}')" class="p-2 bg-zinc-800/80 hover:bg-red-500/20 rounded-full text-zinc-300 hover:text-red-400 transition-colors border border-white/5">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -535,19 +579,33 @@
                 return;
             }
             
-            countdownData.push({
-                id: Date.now().toString(),
-                emoji: emoji,
-                title: title,
-                theme: theme,
-                date: fullDate,
-                created: new Date().toISOString(),
-                isPrimary: false
-            });
+            if (currentEditId) {
+                // Update existing event
+                const itemIndex = countdownData.findIndex(i => i.id === currentEditId);
+                if (itemIndex > -1) {
+                    countdownData[itemIndex].emoji = emoji;
+                    countdownData[itemIndex].title = title;
+                    countdownData[itemIndex].theme = theme;
+                    countdownData[itemIndex].date = fullDate;
+                    // Note: We deliberately do NOT update .created to maintain accurate progress bars
+                }
+            } else {
+                // Add new event
+                countdownData.push({
+                    id: Date.now().toString(),
+                    emoji: emoji,
+                    title: title,
+                    theme: theme,
+                    date: fullDate,
+                    created: new Date().toISOString(),
+                    isPrimary: false
+                });
+            }
             
             saveData();
             document.getElementById('add-modal').close();
             this.reset();
+            currentEditId = null;
             
             renderInitialUI();
             updateTimers();
