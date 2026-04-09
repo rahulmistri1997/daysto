@@ -1020,9 +1020,9 @@
                                     <svg class="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
                             </div>
-                            <span class="text-sm font-medium text-white peer-checked:line-through peer-checked:text-zinc-500 transition-all">${escapeHTML(task.text)}</span>
+                            <span class="text-sm font-medium text-white peer-checked:line-through peer-checked:text-zinc-500 transition-all break-words">${escapeHTML(task.text)}</span>
                         </label>
-                        <button onclick="deleteTask('${task.id}')" class="text-zinc-500 hover:text-red-400 transition-colors p-1.5 rounded-md hover:bg-zinc-800 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100">
+                        <button onclick="deleteTask('${task.id}')" class="text-zinc-500 hover:text-red-400 transition-colors p-1.5 rounded-md hover:bg-zinc-800 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 shrink-0">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </li>
@@ -1154,20 +1154,20 @@
                     <div id="card-${id}" class="group relative flex flex-col rounded-3xl border backdrop-blur-md p-6 sm:p-8 transition-all duration-300 overflow-hidden ${theme.border} bg-zinc-900/80">
                         ${item.isPrimary || item.isICal ? `<div class="absolute top-0 left-0 w-full h-1 ${theme.bar}"></div>` : ''}
                         
-                        <!-- Top Actions -->
-                        <div class="absolute top-6 right-6 flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10">
-                            <button onclick="openTaskModal('${id}')" class="p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5" title="Tasks">
+                        <!-- Actions -->
+                        <div class="flex sm:absolute sm:top-6 sm:right-6 items-center gap-1.5 sm:gap-2 mb-4 sm:mb-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10 self-end sm:self-auto order-first sm:order-none mt-2 sm:mt-0">
+                            <button onclick="openTaskModal('${id}')" class="p-1.5 sm:p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5" title="Tasks">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
                             </button>
-                            <button onclick="shareEvent('${id}')" class="p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5" title="Share"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg></button>
-                            ${!item.isICal ? `<button onclick="openEditModal('${id}')" class="p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>` : ''}
-                            <button onclick="deleteEvent('${id}')" class="p-2 bg-zinc-800/80 hover:bg-red-500/20 rounded-full text-zinc-300 hover:text-red-400 transition-colors border border-white/5" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            <button onclick="shareEvent('${id}')" class="p-1.5 sm:p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5" title="Share"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg></button>
+                            ${!item.isICal ? `<button onclick="openEditModal('${id}')" class="p-1.5 sm:p-2 bg-zinc-800/80 hover:bg-zinc-700 rounded-full text-zinc-300 transition-colors border border-white/5" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>` : ''}
+                            <button onclick="deleteEvent('${id}')" class="p-1.5 sm:p-2 bg-zinc-800/80 hover:bg-red-500/20 rounded-full text-zinc-300 hover:text-red-400 transition-colors border border-white/5" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                         </div>
 
                         ${badge}
-                        <div class="flex items-center gap-4 mb-2 pr-20">
-                            <span class="text-3xl sm:text-4xl drop-shadow-md bg-white/5 rounded-xl p-2 border border-white/5">${safeEmoji}</span>
-                            <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">${safeTitle}</h2>
+                        <div class="flex items-center gap-4 mb-2 sm:pr-40">
+                            <span class="text-3xl sm:text-4xl drop-shadow-md bg-white/5 rounded-xl p-2 border border-white/5 shrink-0">${safeEmoji}</span>
+                            <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100 break-words">${safeTitle}</h2>
                         </div>
 
                         <div class="flex flex-wrap items-center gap-3 mb-8">
@@ -1259,6 +1259,34 @@
                 updateAnimatedText(`val-${item.id}-Secs`, Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0'));
             });
         }
+
+        document.getElementById('add-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const fullDate = `${document.getElementById('event-date').value}T${document.getElementById('event-time').value}:00`;
+            if (isNaN(new Date(fullDate).getTime())) return customAlert("Invalid Date", "Please enter a valid date and time.");
+            
+            const newData = {
+                emoji: document.getElementById('event-emoji').value,
+                title: document.getElementById('event-title').value,
+                theme: document.querySelector('input[name="event-theme"]:checked').value,
+                date: fullDate
+            };
+            
+            if (currentEditId) {
+                const idx = countdownData.findIndex(i => i.id === currentEditId);
+                if (idx > -1) countdownData[idx] = { ...countdownData[idx], ...newData };
+            } else {
+                countdownData.push({ id: Date.now().toString(), created: new Date().toISOString(), isPrimary: false, ...newData });
+            }
+            
+            await saveData();
+            document.getElementById('add-modal').close();
+            this.reset();
+            currentEditId = null;
+            
+            renderInitialUI();
+            updateTimers();
+        });
 
         // Trigger Startup
         initApp();
