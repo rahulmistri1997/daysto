@@ -317,7 +317,13 @@
             <form id="ical-form" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Calendar URL</label>
-                    <input type="text" id="ical-url" required placeholder="webcal://..." class="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    <input type="text" id="ical-url" required placeholder="webcal://..." class="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Skip Events With Prefix (Optional)</label>
+                    <input type="text" id="ical-ignore-prefix" placeholder="e.g., [Skip], Task:" class="w-full bg-zinc-950/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm">
+                    <p class="text-[10px] text-zinc-500 mt-1.5">Comma-separated prefixes. Events starting with these will be ignored.</p>
                 </div>
                 
                 <div class="flex gap-3 pt-4 mt-6 border-t border-white/10">
@@ -516,6 +522,7 @@
         let sessionPasscode = null;
         let currentView = 'created';
         let lastICalUrl = localStorage.getItem('lastICalUrl') || '';
+        let lastICalIgnorePrefix = localStorage.getItem('lastICalIgnorePrefix') || '';
         let currentTaskId = null; // Used for task modal
 
         window.switchView = function(view) {
@@ -552,7 +559,9 @@
             customConfirm("Clear All Imported", "Are you sure you want to remove all imported events and the synced calendar link?", async () => {
                 countdownData = countdownData.filter(item => !item.isICal);
                 lastICalUrl = '';
+                lastICalIgnorePrefix = '';
                 localStorage.removeItem('lastICalUrl');
+                localStorage.removeItem('lastICalIgnorePrefix');
                 await saveData();
                 switchView('imported');
             });
@@ -560,6 +569,7 @@
 
         window.openICalModal = function() {
             if (lastICalUrl) document.getElementById('ical-url').value = lastICalUrl;
+            if (lastICalIgnorePrefix) document.getElementById('ical-ignore-prefix').value = lastICalIgnorePrefix;
             document.getElementById('ical-modal').showModal();
         };
 
@@ -860,7 +870,7 @@
             return `${year}-${month}-${day}T00:00:00`;
         }
 
-        async function processICalSync(rawUrl) {
+        async function processICalSync(rawUrl, ignorePrefix = '') {
             let url = rawUrl.trim();
             url = url.replace(/^webcal:\/\//i, 'https://');
             
@@ -923,7 +933,16 @@
                 return { added: 0, title: "No Events", msg: "No upcoming events found in this calendar." };
             } else {
                 let added = 0;
+                let skipped = 0;
+                const prefixes = ignorePrefix ? ignorePrefix.split(',').map(p => p.trim()).filter(Boolean) : [];
+
                 newEvents.forEach(evt => {
+                    // Custom Prefix Handler: Skip events that start with the specified ignore prefixes
+                    if (prefixes.length > 0 && prefixes.some(p => evt.title.trim().startsWith(p))) {
+                        skipped++;
+                        return; 
+                    }
+
                     const evtTime = new Date(evt.date).getTime();
                     const exists = countdownData.some(d => d.isICal && d.title === evt.title && new Date(d.date).getTime() === evtTime);
                     if (!exists) {
@@ -945,9 +964,11 @@
                 if (added > 0) {
                     await saveData();
                     switchView('imported'); 
-                    return { added: added, title: "Import Successful", msg: `Successfully imported ${added} new upcoming events!` };
+                    const skipMsg = skipped > 0 ? ` (${skipped} events skipped based on prefix)` : '';
+                    return { added: added, title: "Import Successful", msg: `Successfully imported ${added} new upcoming events!${skipMsg}` };
                 } else {
-                    return { added: 0, title: "Up to Date", msg: "Events are already synced up-to-date." };
+                    const skipMsg = skipped > 0 ? ` However, ${skipped} events were skipped based on your prefix filter.` : '';
+                    return { added: 0, title: "Up to Date", msg: `Events are already synced up-to-date.${skipMsg}` };
                 }
             }
         }
@@ -960,11 +981,14 @@
             btn.disabled = true;
 
             const url = document.getElementById('ical-url').value;
+            const prefix = document.getElementById('ical-ignore-prefix').value;
 
             try {
-                const result = await processICalSync(url);
+                const result = await processICalSync(url, prefix);
                 lastICalUrl = url;
+                lastICalIgnorePrefix = prefix;
                 localStorage.setItem('lastICalUrl', lastICalUrl);
+                localStorage.setItem('lastICalIgnorePrefix', lastICalIgnorePrefix);
                 document.getElementById('ical-modal').close();
                 customAlert(result.title, result.msg);
             } catch (error) {
@@ -984,7 +1008,7 @@
             btn.disabled = true;
 
             try {
-                const result = await processICalSync(lastICalUrl);
+                const result = await processICalSync(lastICalUrl, lastICalIgnorePrefix);
                 customAlert(result.title || "Refetch Complete", result.msg);
             } catch (error) {
                 console.error("iCal Sync Error:", error);
